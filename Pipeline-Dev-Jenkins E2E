@@ -1,0 +1,40 @@
+pipeline {
+    agent {
+        node {
+            label 'dev'
+        }
+    }
+    tools {
+        maven 'mymaven'
+    }
+    environment {
+        SCANNER_HOME = 'mysonar'
+    }
+    stages {
+        stage('code') {
+            steps {
+                git branch: 'develop-1.0', url: 'https://github.com/Nvm-734/Jenkinsproject.git'
+            }
+        }
+        stage('build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage('QCA') {
+            steps {
+                sh '''
+                    mvn sonar:sonar \
+                    -Dsonar.projectKey=myproject \
+                    -Dsonar.host.url=http://51.20.32.204:9000 \
+                    -Dsonar.login=e3e3055a98a71b81a858402a4aa9dc6d00f940ca
+                '''
+            }
+        }
+        stage('deploy') {
+            steps {
+                deploy adapters: [tomcat9(credentialsId: 'Tomcatpassword', path: '', url: 'http://13.62.127.91:8080')], contextPath: '', onFailure: false, war: 'target/*.war'
+            }
+        }
+    }
+}
